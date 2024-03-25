@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
+import 'QuizListPage.dart';
+
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
 
@@ -37,6 +39,11 @@ class _LoginPageState extends State<LoginPage> {
         final Map<String, dynamic> data = json.decode(response.body);
         final String accessToken = data['access_token']; // Assuming access_token is the key in response
         print("Loged in successful with access token: $accessToken");
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => QuizListPage()),
+        );
 
         // Navigate to the next screen or perform any actions after successful login with the access token
       } else {
