@@ -56,10 +56,12 @@ class _LoginPageState extends State<LoginPage> {
           ),
         );
       } else {
-        throw Exception('Failed to login user.');
+        throw Exception('Failed to login user. Please check your credentials.');
       }
+    } on http.ClientException catch (e) {
+      throw Exception('Failed to connect to server. Please check your internet connection.');
     } catch (e) {
-      throw Exception('Failed to connect to server.'); // Handle network errors
+      throw Exception('An unexpected error occurred. Please try again later.');
     }
   }
 
@@ -133,6 +135,7 @@ class _LoginPageState extends State<LoginPage> {
 void main() {
   runApp(const LoginPage());
 }
+
 
 
 
