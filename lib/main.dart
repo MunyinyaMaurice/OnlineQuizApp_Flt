@@ -67,18 +67,18 @@ class MyHomePage extends StatelessWidget {
             child: const Icon(Icons.login),
           ),
           const SizedBox(height: 16), // Adjust the spacing between buttons
-          FloatingActionButton(
-            onPressed: () {
-              // Navigate to SignupPage
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => SignupPage()),
-              );
-            },
-            tooltip: 'Signup',
-            backgroundColor: Colors.blue[400],
-            child: const Icon(Icons.person_add),
-          ),
+          // FloatingActionButton(
+          //   onPressed: () {
+          //     // Navigate to SignupPage
+          //     Navigator.push(
+          //       context,
+          //       MaterialPageRoute(builder: (context) => SignupPage()),
+          //     );
+          //   },
+          //   tooltip: 'Signup',
+          //   backgroundColor: Colors.blue[400],
+          //   child: const Icon(Icons.person_add),
+          // ),
         ],
       ),
     );

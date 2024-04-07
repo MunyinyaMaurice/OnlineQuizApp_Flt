@@ -2,8 +2,11 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
+import 'QuizPage.dart';
+
 class QuizListPage extends StatefulWidget {
-  const QuizListPage({Key? key}) : super(key: key);
+  final String accessToken; // Declare accessToken as a parameter
+  const QuizListPage({Key? key, required this.accessToken}) : super(key: key);
 
   @override
   _QuizListPageState createState() => _QuizListPageState();
@@ -19,10 +22,16 @@ class _QuizListPageState extends State<QuizListPage> {
   }
 
   Future<void> _fetchQuizList() async {
-    final Uri uri = Uri.parse('http://192.168.137.1:23901/api/v2/auth/all_quiz');
+    final Uri uri = Uri.parse('http://192.168.56.1:23901/api/v2/auth/all_quiz');
 
     try {
-      final http.Response response = await http.get(uri);
+      final http.Response response = await http.get(
+        uri,
+        headers: <String, String>{
+          'Authorization': 'Bearer ${widget.accessToken}', // Pass accessToken in the headers
+        },
+      );
+
       if (response.statusCode == 200) {
         final List<dynamic> quizList = json.decode(response.body);
         setState(() {
@@ -78,7 +87,16 @@ class _QuizListPageState extends State<QuizListPage> {
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    // Implement button onPressed logic here
+                    // Add quiz start logic here
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => QuizPage(
+                          quizId: quiz['id'],
+                          accessToken: widget.accessToken,
+                        ),
+                      ),
+                    );
                   },
                   child: Text(
                     'Start Now',
@@ -93,8 +111,6 @@ class _QuizListPageState extends State<QuizListPage> {
               ],
             ),
           );
-
-
         },
       ),
     );

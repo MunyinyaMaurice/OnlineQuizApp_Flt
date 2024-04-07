@@ -1,9 +1,21 @@
-
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'QuizListPage.dart'; // Import QuizListPage to navigate to it upon successful login
 
-import 'QuizListPage.dart';
+class Login {
+  final String accessToken;
+  final String refreshToken;
+
+  Login({required this.accessToken, required this.refreshToken});
+
+  factory Login.fromJson(Map<String, dynamic> json) {
+    return Login(
+      accessToken: json['access_token'],
+      refreshToken: json['refresh_token'],
+    );
+  }
+}
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -16,121 +28,158 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  Future<void> _login() async {
-    final String email = _emailController.text.trim();
-    final String password = _passwordController.text.trim();
+  Future<Login>? _futureLogin;
 
-    // final Uri uri = Uri.parse('http://127.0.0.1:23901/api/v1/auth/authenticate');
-    final Uri uri = Uri.parse('http://192.168.137.1:23901/api/v1/auth/authenticate');
-    final Map<String, String> body = {
-      'email': email,
-      'password': password,
-    };
-    final String jsonData = jsonEncode(body); // Encode body data as JSON
-
+  Future<void> userLogin(BuildContext context, String email, String password) async {
     try {
-      final http.Response response = await http.post(
-        uri,
-        body: jsonData,
-        headers: {'Content-Type': 'application/json'},
+      final response = await http.post(
+        Uri.parse('http://192.168.56.1:23901/api/v1/auth/authenticate'),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(<String, String>{
+          'email': email,
+          'password': password,
+        }),
       );
 
       if (response.statusCode == 200) {
-        final Map<String, dynamic> data = json.decode(response.body);
-        final String accessToken = data['access_token']; // Assuming access_token is the key in response
-        print("Loged in successful with access token: $accessToken");
+        // Parse response body into Login object
+        final Map<String, dynamic> data = jsonDecode(response.body);
+        Login login = Login.fromJson(data);
 
-        Navigator.push(
+        // Navigate to QuizListPage upon successful login
+        Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => QuizListPage()),
+          MaterialPageRoute(
+            builder: (context) => QuizListPage(accessToken: login.accessToken),
+          ),
         );
-
-        // Navigate to the next screen or perform any actions after successful login with the access token
       } else {
-        final String errorMessage = response.body.toString(); // Capture the error message from response body
-        print('Login failed. Status code: ${response.statusCode}');
-        print('Error message: $errorMessage');
-        showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: Text('Login Failed'),
-              content: Text(errorMessage), // Display the captured error message
-              actions: <Widget>[
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: Text('OK'),
-                ),
-              ],
-            );
-          },
-        );
+        throw Exception('Failed to login user.');
       }
     } catch (e) {
-      // Handle network errors
-      print('Error occurred during login: $e');
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: Text('Error'),
-            content: Text('Failed to connect to the server. Please check your internet connection and try again.'),
-            actions: <Widget>[
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: Text('OK'),
-              ),
-            ],
-          );
-        },
-      );
+      throw Exception('Failed to connect to server.'); // Handle network errors
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Login'),
+    return MaterialApp(
+      title: 'Login Page',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            TextField(
-              controller: _emailController,
-              decoration: const InputDecoration(labelText: 'Email'),
-            ),
-            TextField(
-              controller: _passwordController,
-              decoration: const InputDecoration(labelText: 'Password'),
-              obscureText: true,
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _login,
-              child: const Text('Login'),
-            ),
-          ],
+      home: Scaffold(
+        appBar: AppBar(
+          title: const Text('Login Page'),
+        ),
+        body: Container(
+          alignment: Alignment.center,
+          padding: const EdgeInsets.all(8),
+          child: (_futureLogin == null) ? buildColumn() : buildFutureBuilder(),
         ),
       ),
     );
   }
+
+  Column buildColumn() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: <Widget>[
+        TextField(
+          controller: _emailController,
+          decoration: InputDecoration(
+            labelText: 'Email',
+          ),
+        ),
+        TextField(
+          controller: _passwordController,
+          decoration: InputDecoration(
+            labelText: 'Password',
+          ),
+          obscureText: true,
+        ),
+        SizedBox(height: 20),
+        ElevatedButton(
+          onPressed: () {
+            setState(() {
+              _futureLogin = userLogin(context, _emailController.text, _passwordController.text) as Future<Login>?;
+            });
+          },
+          child: Text('Login'),
+        ),
+      ],
+    );
+  }
+
+  Widget buildFutureBuilder() {
+    return FutureBuilder<Login>(
+      future: _futureLogin,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return CircularProgressIndicator();
+        } else if (snapshot.hasError) {
+          return Text('Login Failed: ${snapshot.error}');
+        } else {
+          // Handle other states as needed
+          return Container();
+        }
+      },
+    );
+  }
+}
+
+void main() {
+  runApp(const LoginPage());
 }
 
 
-//
+
 // import 'dart:convert';
+// import 'dart:async';
 //
 // import 'package:flutter/material.dart';
 // import 'package:http/http.dart' as http;
+//
+// Future<Login> userLogin(String email, String password) async {
+//   final response = await http.post(
+//     Uri.parse('http://192.168.56.1:23901/api/v1/auth/authenticate'),
+//     headers: <String, String>{
+//       'Content-Type': 'application/json; charset=UTF-8',
+//     },
+//     body: jsonEncode(<String, String>{
+//       'email': email,
+//       'password': password,
+//     }),
+//   );
+//
+//   if (response.statusCode == 200) {
+//     // Parse response body into Login object
+//     final Map<String, dynamic> data = jsonDecode(response.body);
+//     return Login.fromJson(data);
+//   } else {
+//     throw Exception('Failed to login user.');
+//   }
+// }
+//
+// class Login {
+//   final String accessToken;
+//   final String refreshToken;
+//
+//   Login({required this.accessToken, required this.refreshToken});
+//
+//   factory Login.fromJson(Map<String, dynamic> json) {
+//     return Login(
+//       accessToken: json['access_token'],
+//       refreshToken: json['refresh_token'],
+//     );
+//   }
+// }
+//
+// void main() {
+//   runApp(const LoginPage());
+// }
 //
 // class LoginPage extends StatefulWidget {
 //   const LoginPage({Key? key}) : super(key: key);
@@ -142,71 +191,260 @@ class _LoginPageState extends State<LoginPage> {
 // class _LoginPageState extends State<LoginPage> {
 //   final TextEditingController _emailController = TextEditingController();
 //   final TextEditingController _passwordController = TextEditingController();
-//
-//   Future<void> _login() async {
-//     // 1. Check for empty fields
-//     final String email = _emailController.text.trim();
-//     final String password = _passwordController.text.trim();
-//     if (email.isEmpty || password.isEmpty) {
-//       // Show a dialog or display an error message
-//       print('Email or password can not be empty');
-//       // return
-//     }
-//
-//     final Uri uri = Uri.parse('http://127.0.0.1:23901/api/v1/auth/authenticate');
-//     final Map<String, String> body = {
-//       'email': email,
-//       'password': password,
-//     };
-//
-//     try {
-//       final http.Response response = await http.post(uri, body: jsonEncode(body)); // Encode data as JSON
-//       if (response.statusCode == 200) {
-//         final Map<String, dynamic> data = json.decode(response.body);
-//         final String accessToken = data['access_token'];
-//         final String refreshToken = data['refresh_token'];
-//
-//         // Navigate to the next screen or perform any actions after successful login
-//       } else {
-//         // Handle error responses (check response.body for error messages)
-//         print('Login failed. Status code: ${response.statusCode}');
-//       }
-//     } catch (e) {
-//       // Handle network errors
-//       print('Error occurred during login: $e');
-//     }
-//   }
+//   Future<Login>? _futureLogin;
 //
 //   @override
 //   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: const Text('Login'),
+//     return MaterialApp(
+//       title: 'Login Page',
+//       theme: ThemeData(
+//         primarySwatch: Colors.blue,
 //       ),
-//       body: Padding(
-//         padding: const EdgeInsets.all(16.0),
-//         child: Column(
-//           mainAxisAlignment: MainAxisAlignment.center,
-//           crossAxisAlignment: CrossAxisAlignment.center,
-//           children: [
-//             TextField(
-//               controller: _emailController,
-//               decoration: const InputDecoration(labelText: 'Email'),
-//             ),
-//             TextField(
-//               controller: _passwordController,
-//               decoration: const InputDecoration(labelText: 'Password'),
-//               obscureText: true,
-//             ),
-//             const SizedBox(height: 16),
-//             ElevatedButton(
-//               onPressed: _login,
-//               child: const Text('Login'),
-//             ),
-//           ],
+//       home: Scaffold(
+//         appBar: AppBar(
+//           title: const Text('Login Page'),
+//         ),
+//         body: Container(
+//           alignment: Alignment.center,
+//           padding: const EdgeInsets.all(8),
+//           child: (_futureLogin == null) ? buildColumn() : buildFutureBuilder(),
 //         ),
 //       ),
 //     );
 //   }
+//
+//   Column buildColumn() {
+//     return Column(
+//       mainAxisAlignment: MainAxisAlignment.center,
+//       children: <Widget>[
+//         TextField(
+//           controller: _emailController,
+//           decoration: InputDecoration(
+//             labelText: 'Email',
+//           ),
+//         ),
+//         TextField(
+//           controller: _passwordController,
+//           decoration: InputDecoration(
+//             labelText: 'Password',
+//           ),
+//           obscureText: true,
+//         ),
+//         SizedBox(height: 20),
+//         ElevatedButton(
+//           onPressed: () {
+//             setState(() {
+//               _futureLogin = userLogin(_emailController.text, _passwordController.text);
+//             });
+//           },
+//           child: Text('Login'),
+//         ),
+//       ],
+//     );
+//   }
+//
+//   FutureBuilder<Login> buildFutureBuilder() {
+//     return FutureBuilder<Login>(
+//       future: _futureLogin,
+//       builder: (context, snapshot) {
+//         if (snapshot.hasData) {
+//           return Column(
+//             children: [
+//               Text('Access Token: ${snapshot.data!.accessToken}'),
+//               Text('Refresh Token: ${snapshot.data!.refreshToken}'),
+//             ],
+//           );
+//         } else if (snapshot.hasError) {
+//           return Text('${snapshot.error}');
+//         }
+//         return const CircularProgressIndicator();
+//       },
+//     );
+//   }
+// }
+
+
+// import 'dart:convert';
+// import 'dart:async';
+// import 'package:flutter/material.dart';
+// import 'package:http/http.dart' as http;
+//
+//
+// Future<Login> userLogin(String email, String password) async {
+//   final response = await http.post(
+//     Uri.parse('http://172.19.176.1:23901/api/v1/auth/authenticate'),
+//     headers: <String, String>{
+//       'Content-Type': 'application/json; charset=UTF-8',
+//     },
+//     body: jsonEncode(<String, String>{
+//       'email': email,
+//       'password': password,
+//     }),
+//   );
+//
+//   if (response.statusCode == 200) {
+//     // Login successful
+//     return Login.fromJson(jsonDecode(response.body)
+//     as Map<String, dynamic>);
+//
+//     Map<String, dynamic> data = json.decode(response.body);
+//     String accessToken = data['access_token'];
+//     String refreshToken = data['refresh_token'];
+//     // Perform actions after successful login
+//     print('Access Token: $accessToken');
+//     print('Refresh Token: $refreshToken');
+//   } else {
+//     // Login failed
+//     throw Exception('Failed to create album.');
+//     // setState(() {
+//     //   errorMessage = 'Login failed. Please check your credentials.';
+//     }
+//   }
+// // }
+//
+// class Login {
+//   // final int id;
+//   final String email;
+//   final String password;
+//
+//
+//   const Login({
+//     // required this.id,
+//     required this.email,
+//     required this.password});
+//
+//   factory Login.fromJson(Map<String, dynamic> json) {
+//     return switch (json) {
+//       {
+//       'email': String email,
+//       'password': String password,
+//       } =>
+//           Login(
+//             email: email,
+//             password: password,
+//           ),
+//       _ => throw const FormatException('Failed to login user.'),
+//     };
+//   }
 // }
 //
+//
+// void main() {
+//   runApp( const LoginPage());
+// }
+//
+// class LoginPage extends StatefulWidget {
+//   const LoginPage({super.key});
+//   @override
+//   // _LoginPageState createState() => _LoginPageState();
+//   State<LoginPage> createState() {
+//     return _LoginPageState();
+//   }
+// }
+//
+// class _LoginPageState extends State<LoginPage> {
+//   final TextEditingController _controller = TextEditingController();
+//   Future<Login>? _futureLogin;
+//   @override
+//   Widget build(BuildContext context) {
+//     return MaterialApp(
+//       title: 'Login Page',
+//       theme: ThemeData(
+//         primarySwatch: Colors.blue,
+//       ),
+//       // home: LoginPage(),
+//       home: Scaffold(
+//         appBar: AppBar(
+//           title: const Text('Login Page'),
+//         ),
+//         body: Container(
+//           alignment: Alignment.center,
+//           padding: const EdgeInsets.all(8),
+//           child: (_futureLogin == null) ? buildColumn() : buildFutureBuilder(),
+//         ),
+//       ),
+//     );
+//   }
+//   Column buildColumn() {
+//     return Column(
+//       mainAxisAlignment: MainAxisAlignment.center,
+//       children: <Widget>[
+//             TextField(
+//               controller: _controller,
+//               decoration: InputDecoration(
+//                 labelText: 'Email',
+//               ),
+//             ),
+//             TextField(
+//               controller: _controller,
+//               decoration: InputDecoration(
+//                 labelText: 'Password',
+//               ),
+//               obscureText: true,
+//             ),
+//             SizedBox(height: 20),
+//         ElevatedButton(
+//           onPressed: () {
+//             setState(() {
+//               _futureLogin = userLogin(_controller.text, _controller.text);
+//             });
+//           },
+//           child: Text('Login'),
+//             ),
+//       ],
+//     );
+//   }
+//   FutureBuilder<Login> buildFutureBuilder() {
+//     return FutureBuilder<Login>(
+//       future: _futureLogin,
+//       builder: (context, snapshot) {
+//         if (snapshot.connectionState == ConnectionState.waiting) {
+//           // Login in progress
+//           return CircularProgressIndicator();
+//         } else if (snapshot.hasError) {
+//           // Error during login process
+//           return SnackBar(
+//             content: Text('Error: Login failed. ${snapshot.error}'),
+//           );
+//         } else if (snapshot.hasData) {
+//           final Login login = snapshot.data!;
+//           final String accessToken = login.accessToken;
+//
+//           // Use the access token in your HTTP client to make authorized requests
+//           // Note: You should handle HTTP requests properly outside the UI layer.
+//           // Here, we're just showing a SnackBar as an example.
+//           return ElevatedButton(
+//             onPressed: () async {
+//               final response = await http.get(
+//                 Uri.parse('https://api.example.com/protected-resource'),
+//                 headers: {
+//                   'Authorization': 'Bearer $accessToken',
+//                 },
+//               );
+//
+//               if (response.statusCode == 200) {
+//                 // Successful response
+//                 final String responseBody = utf8.decode(response.bodyBytes);
+//                 // Display the response body on the screen (replace with your UI logic)
+//                 ScaffoldMessenger.of(context).showSnackBar(
+//                   SnackBar(
+//                     content: Text('Response: $responseBody'),
+//                   ),
+//                 );
+//               } else {
+//                 // Error handling
+//                 ScaffoldMessenger.of(context).showSnackBar(
+//                   SnackBar(
+//                     content: Text('Error: Failed to access protected resource. Status code: ${response.statusCode}'),
+//                   ),
+//                 );
+//               }
+//             },
+//             child: Text('Access Protected Resource'),
+//           );
+//         } else {
+//           return Container(); // Placeholder widget
+//         }
+//       },
+//     );
+//   }
