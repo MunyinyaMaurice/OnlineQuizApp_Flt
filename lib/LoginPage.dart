@@ -30,7 +30,7 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<Login>? _futureLogin;
 
-  Future<void> userLogin(BuildContext context, String email, String password) async {
+  Future<Login> userLogin(BuildContext context, String email, String password) async {
     try {
       final response = await http.post(
         Uri.parse('http://192.168.56.1:23901/api/v1/auth/authenticate'),
@@ -55,6 +55,8 @@ class _LoginPageState extends State<LoginPage> {
             builder: (context) => QuizListPage(accessToken: login.accessToken),
           ),
         );
+
+        return login; // Return the Login object upon successful login
       } else {
         throw Exception('Failed to login user. Please check your credentials.');
       }
@@ -64,6 +66,7 @@ class _LoginPageState extends State<LoginPage> {
       throw Exception('An unexpected error occurred. Please try again later.');
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -104,13 +107,21 @@ class _LoginPageState extends State<LoginPage> {
         ),
         SizedBox(height: 20),
         ElevatedButton(
-          onPressed: () {
-            setState(() {
-              _futureLogin = userLogin(context, _emailController.text, _passwordController.text) as Future<Login>?;
-            });
+          onPressed: () async {
+            try {
+              // Initiate the login process
+              Login login = await userLogin(context, _emailController.text, _passwordController.text);
+
+              // If login is successful, navigation to QuizListPage is handled in userLogin method
+            } catch (e) {
+              // Handle login failure (display error message, etc.)
+              print('Login Failed: $e');
+            }
           },
           child: Text('Login'),
         ),
+
+
       ],
     );
   }
@@ -137,8 +148,8 @@ void main() {
 }
 
 
-
-
+//
+//
 // import 'dart:convert';
 // import 'dart:async';
 //
