@@ -392,24 +392,28 @@ class _QuizPageState extends State<QuizPage> {
     }
   }
   void _submitQuiz() async {
-    // Process the quiz submission here
     print('Submitting quiz...');
-
-    // Create a new map with keys starting from 1
-    Map<String, dynamic> formattedAnswers = {};
-    _answeredQuestions.forEach((key, value) {
-      int questionNumber = int.parse(key) + 1; // Convert key to int and add 1
-      formattedAnswers[questionNumber.toString()] = value;
-    });
-
-    // Convert to JSON
-    String jsonAnswers = json.encode(formattedAnswers);
-    print('Formatted Answers: $jsonAnswers');
 
     // Prepare the endpoint URL
     String submitUrl = 'http://192.168.56.1:23901/api/v2/auth/submit/${widget.quizId}';
 
     try {
+      // Prepare the map to hold submitted answers
+      Map<String, dynamic> submittedAnswers = {};
+
+      // Loop through answered questions map
+      _answeredQuestions.forEach((key, value) {
+        // Use question index as key (converted to string)
+        int questionNumber = int.parse(key) + 1; // Convert key to int and add 1
+        submittedAnswers[questionNumber.toString()] = value;
+
+        // submittedAnswers[key] = value;
+      });
+
+      // Convert submitted answers map to JSON
+      String jsonAnswers = json.encode(submittedAnswers);
+      print('Formatted Answers: $jsonAnswers');
+
       // Make POST request to submit quiz
       final http.Response response = await http.post(
         Uri.parse(submitUrl),
@@ -419,25 +423,56 @@ class _QuizPageState extends State<QuizPage> {
         },
         body: jsonAnswers,
       );
-
       if (response.statusCode == 200) {
-        // Quiz submitted successfully
         print('Quiz submitted successfully');
-        // Navigate to the result page or perform any other actions
+
+        // Show dialog to notify user
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text('Quiz Submitted'),
+              content: Text('Quiz has been submitted successfully.'),
+              actions: <Widget>[
+                TextButton(
+                  child: Text('OK'),
+                  onPressed: () {
+                    // Close dialog
+                    Navigator.of(context).pop();
+
+                    // Navigate to QuizResultPage
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => QuizResultPage(
+                          quizId: widget.quizId,
+                          accessToken: widget.accessToken,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            );
+          },
+        );
+
+      // if (response.statusCode == 200) {
+      //   print('Quiz submitted successfully');
+      //   // Handle navigation or other actions upon successful submission
       } else {
-        // Quiz submission failed
         print('Failed to submit quiz. Status code: ${response.statusCode}');
         print('Response body: ${response.body}');
-        // Handle error scenario accordingly
+        // Handle failure scenario accordingly
       }
     } catch (e) {
-      // Error occurred during quiz submission
       print('Error occurred during quiz submission: $e');
       // Handle error scenario accordingly
     }
   }
 
-  // void _submitQuiz() {
+
+  // void _submitQuiz() async {
   //   // Process the quiz submission here
   //   print('Submitting quiz...');
   //
@@ -452,8 +487,37 @@ class _QuizPageState extends State<QuizPage> {
   //   String jsonAnswers = json.encode(formattedAnswers);
   //   print('Formatted Answers: $jsonAnswers');
   //
-  //   // You can implement the submission logic based on your requirements
+  //   // Prepare the endpoint URL
+  //   String submitUrl = 'http://192.168.56.1:23901/api/v2/auth/submit/${widget.quizId}';
+  //
+  //   try {
+  //     // Make POST request to submit quiz
+  //     final http.Response response = await http.post(
+  //       Uri.parse(submitUrl),
+  //       headers: <String, String>{
+  //         'Content-Type': 'application/json',
+  //         'Authorization': 'Bearer ${widget.accessToken}',
+  //       },
+  //       body: jsonAnswers,
+  //     );
+  //
+  //     if (response.statusCode == 200) {
+  //       // Quiz submitted successfully
+  //       print('Quiz submitted successfully');
+  //       // Navigate to the result page or perform any other actions
+  //     } else {
+  //       // Quiz submission failed
+  //       print('Failed to submit quiz. Status code: ${response.statusCode}');
+  //       print('Response body: ${response.body}');
+  //       // Handle error scenario accordingly
+  //     }
+  //   } catch (e) {
+  //     // Error occurred during quiz submission
+  //     print('Error occurred during quiz submission: $e');
+  //     // Handle error scenario accordingly
+  //   }
   // }
+
 
   @override
   Widget build(BuildContext context) {

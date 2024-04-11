@@ -2,14 +2,18 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
+import 'QuizListPage.dart';
+
 class QuizResultPage extends StatefulWidget {
   final int quizId;
-  final Map<String, String> selectedOptions;
+  final String accessToken;
+  // final Map<String, String> selectedOptions;
 
   const QuizResultPage({
     Key? key,
     required this.quizId,
-    required this.selectedOptions,
+    required this.accessToken
+    // required this.selectedOptions,
   }) : super(key: key);
 
   @override
@@ -30,10 +34,13 @@ class _QuizResultPageState extends State<QuizResultPage> {
 
   Future<void> _fetchQuizResult() async {
     final Uri uri = Uri.parse(
-        'http://192.168.56.1:23901/api/v2/auth/quiz-results/result?quizId=${widget.quizId}');
+        'http://192.168.56.1:23901/api/v2/auth/quiz-results/result/${widget.quizId}');
 
     try {
-      final http.Response response = await http.get(uri);
+      final http.Response response = await http.get(uri,
+        headers: <String, String>{
+          'Authorization': 'Bearer ${widget.accessToken}',
+        },);
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = json.decode(response.body);
@@ -88,9 +95,16 @@ class _QuizResultPageState extends State<QuizResultPage> {
             SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
-                Navigator.pop(context); // Go back to previous screen (QuizPage)
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => QuizListPage(
+                      accessToken: widget.accessToken,
+                    ),
+                  ),
+                ); // Go back to previous screen (QuizPage)
               },
-              child: Text('Back to Quiz'),
+              child: Text('Back to Quiz list page'),
             ),
           ],
         ),
