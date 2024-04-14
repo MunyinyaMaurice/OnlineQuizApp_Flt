@@ -1,7 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'QuizListPage.dart'; // Import QuizListPage to navigate to it upon successful login
+import 'QuizListPage.dart';
+import 'UserDashboard.dart'; // Import QuizListPage to navigate to it upon successful login
 
 class Login {
   final String accessToken;
@@ -49,10 +50,16 @@ class _LoginPageState extends State<LoginPage> {
         Login login = Login.fromJson(data);
 
         // Navigate to QuizListPage upon successful login
+        // Navigator.pushReplacement(
+        //   context,
+        //   MaterialPageRoute(
+        //     builder: (context) => QuizListPage(accessToken: login.accessToken),
+        //   ),
+        // );
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => QuizListPage(accessToken: login.accessToken),
+            builder: (context) => UserDashboard(accessToken: login.accessToken),
           ),
         );
 
