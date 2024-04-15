@@ -65,16 +65,7 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
         _option3Controller.clear();
         _option4Controller.clear();
         _correctOptionIndexController.clear();
-
-        // Clear text fields after successful addition within setState
-        // setState(() {
-        //   _questionTextController.clear();
-        //   _option1Controller.clear();
-        //   _option2Controller.clear();
-        //   _option3Controller.clear();
-        //   _option4Controller.clear();
-        //   _correctOptionIndexController.clear();
-        // });
+        
       } else {
         // Handle other status codes (e.g., 4xx, 5xx)
         print('Failed to add question: ${response.statusCode}');

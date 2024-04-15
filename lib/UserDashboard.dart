@@ -3,11 +3,11 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 import 'QuizListPage.dart';
-import 'package:quizapp_flutter/admin/CreateQuizScreen.dart';
+import 'admin/CreateQuizScreen.dart';
+import 'admin/QuizListWithQuestionsScreen.dart'; // Import the new screen
 
 class UserDashboard extends StatelessWidget {
   final String accessToken;
-
 
   const UserDashboard({Key? key, required this.accessToken}) : super(key: key);
 
@@ -80,6 +80,19 @@ class UserDashboard extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (context) => CreateQuizScreen(accessToken: accessToken),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.list_alt),
+              title: Text('Quiz List with Questions'),
+              onTap: () {
+                Navigator.pop(context); // Close the drawer
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => QuizListWithQuestionsScreen(accessToken: accessToken),
                   ),
                 );
               },
