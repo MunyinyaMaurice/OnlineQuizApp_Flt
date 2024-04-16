@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-import '../UserDashboard.dart';
+import '../userDashboard.dart';
 
 class AddQuestionScreen extends StatefulWidget {
   final String accessToken;

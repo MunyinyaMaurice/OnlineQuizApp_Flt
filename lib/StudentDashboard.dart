@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert';
 
+import 'LoginPage.dart';
 import 'QuizListPage.dart';
-import 'admin/CreateQuizScreen.dart';
-import 'admin/QuizListWithQuestionsScreen.dart'; // Import the new screen
+import 'main.dart';
+// import 'admin/CreateQuizScreen.dart';
+// import 'admin/QuizListWithQuestionsScreen.dart';
 
-class UserDashboard extends StatelessWidget {
+class StudentDashboard extends StatelessWidget {
   final String accessToken;
 
-  const UserDashboard({Key? key, required this.accessToken}) : super(key: key);
+  const StudentDashboard({Key? key, required this.accessToken}) : super(key: key);
 
   Future<void> _logout(BuildContext context) async {
     final url = Uri.parse('http://192.168.56.1:23901/api/v1/auth/logout');
@@ -25,7 +26,10 @@ class UserDashboard extends StatelessWidget {
 
       if (response.statusCode == 200) {
         // Logout successful, navigate to login page
-        Navigator.pushReplacementNamed(context, '/login'); // Replace with your login route
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => MyApp()),
+        );
       } else {
         // Handle logout failure
         print('Failed to logout. Status code: ${response.statusCode}');
@@ -40,7 +44,7 @@ class UserDashboard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('User Dashboard'),
+        title: Text('Student Dashboard'),
       ),
       drawer: Drawer(
         child: ListView(
@@ -51,7 +55,7 @@ class UserDashboard extends StatelessWidget {
                 color: Colors.blue,
               ),
               child: Text(
-                'User Dashboard',
+                'Student Dashboard',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 24,
@@ -71,32 +75,7 @@ class UserDashboard extends StatelessWidget {
                 );
               },
             ),
-            ListTile(
-              leading: Icon(Icons.add),
-              title: Text('Create Quiz'),
-              onTap: () {
-                Navigator.pop(context); // Close the drawer
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => CreateQuizScreen(accessToken: accessToken),
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.list_alt),
-              title: Text('Quiz List with Questions'),
-              onTap: () {
-                Navigator.pop(context); // Close the drawer
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => QuizListWithQuestionsScreen(accessToken: accessToken),
-                  ),
-                );
-              },
-            ),
+
             ListTile(
               leading: Icon(Icons.logout),
               title: Text('Logout'),

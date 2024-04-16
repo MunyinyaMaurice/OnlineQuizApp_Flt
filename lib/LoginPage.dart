@@ -2,22 +2,30 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'QuizListPage.dart';
-import 'UserDashboard.dart'; // Import QuizListPage to navigate to it upon successful login
+import 'StudentDashboard.dart';
+import 'userDashboard.dart';
+// import 'UserDashboard.dart'; // Import QuizListPage to navigate to it upon successful login
+
 
 class Login {
   final String accessToken;
   final String refreshToken;
+  final String userRole;
 
-  Login({required this.accessToken, required this.refreshToken});
+  Login({
+    required this.accessToken,
+    required this.refreshToken,
+    required this.userRole,
+  });
 
   factory Login.fromJson(Map<String, dynamic> json) {
     return Login(
       accessToken: json['access_token'],
       refreshToken: json['refresh_token'],
+      userRole: json['user_role'],
     );
   }
 }
-
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
 
@@ -49,19 +57,25 @@ class _LoginPageState extends State<LoginPage> {
         final Map<String, dynamic> data = jsonDecode(response.body);
         Login login = Login.fromJson(data);
 
-        // Navigate to QuizListPage upon successful login
-        // Navigator.pushReplacement(
-        //   context,
-        //   MaterialPageRoute(
-        //     builder: (context) => QuizListPage(accessToken: login.accessToken),
-        //   ),
-        // );
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => UserDashboard(accessToken: login.accessToken),
-          ),
-        );
+        // Check user role and navigate accordingly
+        if (login.userRole == 'STUDENT') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => StudentDashboard(accessToken: login.accessToken),
+            ),
+          );
+        } else if (login.userRole == 'ADMIN') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => UserDashboard(accessToken: login.accessToken),
+            ),
+          );
+        } else {
+          // Handle other roles (if needed)
+          throw Exception('Unknown user role: ${login.userRole}');
+        }
 
         return login; // Return the Login object upon successful login
       } else {
@@ -73,6 +87,7 @@ class _LoginPageState extends State<LoginPage> {
       throw Exception('An unexpected error occurred. Please try again later.');
     }
   }
+
 
 
   @override
